@@ -160,6 +160,7 @@ catch(err)
 }
 
 let args: string[] = [];
+args.push('run');
 args.push('-c');
 args.push(gdnConfigFilePath);
 
