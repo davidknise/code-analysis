@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { MscaAction } from './msca-toolkit/msca-toolkit';
+import { MsdoClient } from 'microsoft-security-devops-actions-toolkit';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -7,7 +7,7 @@ import { stringify } from 'querystring';
 
 function getAnalysisLevelArgumentFromInput(analysisLevelName: string): string {
     let analysisLevelInput = core.getInput(analysisLevelName.toLowerCase());
-    if (action.isNullOrWhiteSpace(analysisLevelInput)) {
+    if (client.isNullOrWhiteSpace(analysisLevelInput)) {
         return '';
     }
 
@@ -51,8 +51,8 @@ function getAnalysisLevelArgumentFromInput(analysisLevelName: string): string {
 
 function appendToProjectsOrSolutions(inputVariableName: string, projectsOrSolutions: string): string {
     let input = core.getInput(inputVariableName);
-    if (!action.isNullOrWhiteSpace(input)) {
-        if (!action.isNullOrWhiteSpace(projectsOrSolutions)) {
+    if (!client.isNullOrWhiteSpace(input)) {
+        if (!client.isNullOrWhiteSpace(projectsOrSolutions)) {
             projectsOrSolutions += ';';
         }
 
@@ -62,7 +62,7 @@ function appendToProjectsOrSolutions(inputVariableName: string, projectsOrSoluti
     return projectsOrSolutions;
 }
 
-let action = new MscaAction();
+let client = new MsdoClient();
 
 // Process core analysis-level
 let analysisArgs = getAnalysisLevelArgumentFromInput('all-categories');
@@ -81,7 +81,7 @@ analysisArgs += getAnalysisLevelArgumentFromInput('Security');
 analysisArgs += getAnalysisLevelArgumentFromInput('Usage');
 
 let buildBreakingArg = core.getInput('build-breaking');
-let warnAsError = action.isNullOrWhiteSpace(buildBreakingArg) || buildBreakingArg.toLowerCase() != 'false';
+let warnAsError = client.isNullOrWhiteSpace(buildBreakingArg) || buildBreakingArg.toLowerCase() != 'false';
 
 let projectsOrSolutions = '';
 projectsOrSolutions = appendToProjectsOrSolutions('solution', projectsOrSolutions);
@@ -91,7 +91,7 @@ projectsOrSolutions = appendToProjectsOrSolutions('projects', projectsOrSolution
 
 var buildCommandLines:string = "";
 var first = true;
-if (action.isNullOrWhiteSpace(projectsOrSolutions)) {
+if (client.isNullOrWhiteSpace(projectsOrSolutions)) {
     buildCommandLines += `msbuild.exe ${analysisArgs}`;
 }
 else {
@@ -174,8 +174,10 @@ if (!warnAsError)
     args.push('--not-break-on-detections');
 }
 
+args.push('--github');
+
 core.info("------------------------------------------------------------------------------");
 core.info("Installing and running analyzers...");
 core.info("Warnings and errors will be displayed once the analysis completes.");
 
-action.run(args);
+client.run(args, 'dotnet/code-analysis');
